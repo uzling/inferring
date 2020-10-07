@@ -1,0 +1,174 @@
+---
+title: "Comparison of segment frequencies in BDPROTO, PHOIBLE and SegBo"
+author: "Steven Moran\n"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  github_document:
+  pandoc_args: --webtex
+---
+
+# Overview
+
+Plot the raw frequency distributions from the three databases.
+
+Load some R libraries.
+
+```{r}
+library(tidyverse)
+library(knitr)
+```
+
+Load the aggregated and transformed data created by the [data preparation report](../data_preparation/data_prep.md).
+
+```{r}
+load('../data_preparation/dfs_for_analysis_csv_vs.RData')
+```
+
+The `all_segments_long` table looks like this:
+
+```{r}
+all_segments_long %>% head() %>% kable()
+```
+
+The table is already ordered by PHOIBLE segment frequency, but R needs it sorted as factor to plot it sorted.
+
+```{r}
+all_segments_long$Phoneme <- factor(all_segments_long$Phoneme, levels=all_segments_long$Phoneme[order(-all_segments_long$phoible)])
+```
+
+# Plots
+
+Let's plot the top top 30 most frequent phonemes in PHOIBLE.
+
+```{r}
+top.z <- head(all_segments_long, n=30)
+
+ggplot(data = top.z, aes(x = Phoneme, group=1)) +
+  geom_line(aes(y = phoible_freq, color = "PHOIBLE")) + 
+  geom_line(aes(y = bdproto_freq, color = "BDPROTO")) +
+  geom_line(aes(y = segbo_freq, color = "SegBo")) +
+  ylab("Frequency of phoneme in database") +
+  # xlab("Thirty most frequent phonemes as reported in PHOIBLE") +
+  labs(color="Database") +
+  theme_bw()
+```
+
+Get the most frequent phonemes in BDPROTO and plot them against PHOIBLE.
+
+```{r}
+bdproto_top <- all_segments_long %>% arrange(desc(bdproto))
+```
+
+Ordered as factors for plotting.
+
+```{r}
+bdproto_top$Phoneme <- factor(bdproto_top$Phoneme, levels=bdproto_top$Phoneme[order(-bdproto_top$bdproto)])
+```
+
+```{r}
+top.z <- head(bdproto_top, n=30)
+
+ggplot(data = top.z, aes(x = Phoneme, group=1)) +
+  geom_line(aes(y = phoible_freq, color = "PHOIBLE")) + 
+  geom_line(aes(y = bdproto_freq, color = "BDPROTO")) +
+  geom_line(aes(y = segbo_freq, color = "SegBo")) +
+  ylab("Frequency of phoneme in database") +
+  # xlab("Thirty most frequent phonemes as reported in BDPROTO") +
+  labs(color="Database") +
+  theme_bw()
+  # theme(legend.position = "none") 
+```
+
+Get the most frequent phonemes in SegBo and plot them against PHOIBLE and BDPROTO.
+
+```{r}
+segbo_top <- all_segments_long %>% arrange(desc(segbo))
+```
+
+Ordered as factors for plotting.
+
+```{r}
+segbo_top$Phoneme <- factor(segbo_top$Phoneme, levels=segbo_top$Phoneme[order(-segbo_top$segbo)])
+```
+
+```{r}
+top.z <- head(segbo_top, n=30)
+
+ggplot(data = top.z, aes(x = Phoneme, group=1)) +
+  geom_line(aes(y = segbo_freq, color = "SegBo")) +
+  geom_line(aes(y = phoible_freq, color = "PHOIBLE")) + 
+  geom_line(aes(y = bdproto_freq, color = "BDPROTO")) +
+
+  ylab("Frequency of phoneme in database") +
+  # xlab("Thirty most frequent phonemes as reported in BDPROTO") +
+  labs(color="Database") +
+  theme_bw()
+  # theme(legend.position = "none") 
+```
+
+# Tables
+
+Let's generate a summary table for the paper that includes the number of languages, language families, and total segments in each database.
+
+```{r}
+# Get number of phonological inventories
+phoible_ids <- all_dbs_all_segments %>% filter(Database=="phoible") %>% select(InventoryID) %>% group_by(InventoryID) %>% summarize(n=n())
+phoible_num_ids <- nrow(phoible_ids)
+
+bdproto_ids <- all_dbs_all_segments %>% filter(Database=="bdproto") %>% select(InventoryID) %>% group_by(InventoryID) %>% summarize(n=n())
+bdproto_num_ids <- nrow(bdproto_ids)
+
+segbo_ids <- all_dbs_all_segments %>% filter(Database=="segbo") %>% select(InventoryID) %>% group_by(InventoryID) %>% summarize(n=n())
+segbo_num_ids <- nrow(segbo_ids)
+
+# Generate segment counts
+phoible_segments <- all_dbs_all_segments %>% filter(Database=="phoible") %>% select(Phoneme) %>% group_by(Phoneme) %>% summarize(n=n())
+phoible_num_segments <- nrow(phoible_segments)
+
+bdproto_segments <- all_dbs_all_segments %>% filter(Database=="bdproto") %>% select(Phoneme) %>% group_by(Phoneme) %>% summarize(n=n())
+bdproto_num_segments <- nrow(bdproto_segments)
+
+segbo_segments <- all_dbs_all_segments %>% filter(Database=="segbo") %>% select(Phoneme) %>% group_by(Phoneme) %>% summarize(n=n())
+segbo_num_segments <- nrow(segbo_segments)
+
+# Generate language family counts based on unique Glottocodes
+phoible_langs <- all_dbs_all_segments %>% filter(Database=="phoible") %>% select(Glottocode) %>% group_by(Glottocode) %>% summarize(n=n())
+phoible_num_langs <- nrow(phoible_langs)
+
+bdproto_langs <- all_dbs_all_segments %>% filter(Database=="bdproto") %>% select(Glottocode) %>% group_by(Glottocode) %>% summarize(n=n())
+bdproto_num_langs <- nrow(bdproto_langs)
+
+segbo_langs <- all_dbs_all_segments %>% filter(Database=="segbo") %>% select(Glottocode) %>% group_by(Glottocode) %>% summarize(n=n())
+segbo_num_langs <- nrow(segbo_langs)
+
+# Generate language counts based on unique Glottocodes (language varieties)
+phoible_lang_fams <- all_dbs_all_segments %>% filter(Database=="phoible") %>% select(family_id) %>% group_by(family_id) %>% summarize(n=n())
+phoible_num_lang_fams <- nrow(phoible_lang_fams)
+
+bdproto_lang_fams <- all_dbs_all_segments %>% filter(Database=="bdproto") %>% select(family_id) %>% group_by(family_id) %>% summarize(n=n())
+bdproto_num_lang_fams <- nrow(bdproto_lang_fams)
+
+segbo_lang_fams <- all_dbs_all_segments %>% filter(Database=="segbo") %>% select(family_id) %>% group_by(family_id) %>% summarize(n=n())
+segbo_num_lang_fams <- nrow(segbo_lang_fams)
+
+```
+
+Create the table.
+
+```{r}
+Database <- c("BDPROTO", "PHOIBLE", "SegBo")
+inventories <- c(bdproto_num_ids, phoible_num_ids, segbo_num_ids)
+langs <- c(bdproto_num_langs, phoible_num_langs, segbo_num_langs)
+fams <- c(bdproto_num_lang_fams, phoible_num_lang_fams, segbo_num_lang_fams)
+segments <- c(bdproto_num_segments, phoible_num_segments, segbo_num_segments)
+t <- data.frame(Database, inventories, langs, fams, segments)
+colnames(t) <- c('Database', 'Phonological inventories', 'Language varieties', 'Language families', 'Segment types')
+t %>% kable()
+```
+
+Let's dump it to LaTeX for the paper.
+
+```{r}
+library(xtable)
+print(xtable(t), include.rownames=FALSE)
+```

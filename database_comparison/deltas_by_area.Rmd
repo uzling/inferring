@@ -1,0 +1,176 @@
+---
+title: "Get greatest deltas in segment coverage by macroarea"
+author: "Steven Moran\n"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  github_document:
+  pandoc_args: --webtex
+---
+
+```{r load_libraries, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(knitr)
+library(xtable)
+```
+
+```{r}
+phoible <- read_csv(url('https://github.com/phoible/dev/blob/master/data/phoible.csv?raw=true'), col_types=c(InventoryID='i', Marginal='l', .default='c'))
+```
+
+```{r}
+glottolog <- read_csv('https://cdstar.shh.mpg.de/bitstreams/EAEA0-D501-DBB8-65C4-0/languages_and_dialects_geo.csv')
+head(glottolog)
+```
+
+```{r}
+merged <- left_join(phoible, glottolog, by=c("Glottocode"="glottocode"))
+```
+
+```{r}
+# Get percentages total
+totals <- merged %>% select(InventoryID, Phoneme) %>% group_by(Phoneme) %>% summarize(count=n())
+totals$phoible_freq <- totals$count / length(unique(phoible$InventoryID))
+```
+
+```{r}
+# Get percentages by macroarea
+macros <- merged %>% select(InventoryID, macroarea, Phoneme, SegmentClass)
+# There are some NAs
+table(macros$macroarea, exclude = FALSE)
+```
+
+```{r}
+# Identify the NAs.
+missing_areas <- macros %>% filter(is.na(macroarea)) %>% select(InventoryID) %>% distinct()
+missing_langs <- phoible %>% filter(InventoryID %in% missing_areas$InventoryID)
+missing_langs %>% select(InventoryID, Glottocode, LanguageName) %>% distinct() %>% kable()
+```
+
+```{r}
+# Drop the NAs for the time being
+macros <- macros %>% filter(!is.na(macroarea))
+rownames(macros) <- NULL
+```
+
+
+Get segment frequencies by area.
+
+```{r}
+africa <- macros %>% filter(macroarea=="Africa")
+total <- length(unique(africa$InventoryID))
+africa <- africa %>% group_by(Phoneme, SegmentClass) %>% summarize(count=n())
+africa$freq <- africa$count / total
+africa$macroarea <- 'Africa'
+
+australia <- macros %>% filter(macroarea=="Australia")
+total <- length(unique(australia$InventoryID))
+australia <- australia %>% group_by(Phoneme, SegmentClass) %>% summarize(count=n())
+australia$freq <- australia$count / total
+australia$macroarea <- 'Australia'
+
+eurasia <- macros %>% filter(macroarea=="Eurasia")
+total <- length(unique(eurasia$InventoryID))
+eurasia <- eurasia %>% group_by(Phoneme, SegmentClass) %>% summarize(count=n())
+eurasia$freq <- eurasia$count / total
+eurasia$macroarea <- 'Eurasia'
+
+na <- macros %>% filter(macroarea=="North America")
+total <- length(unique(na$InventoryID))
+na <- na %>% group_by(Phoneme, SegmentClass) %>% summarize(count=n())
+na$freq <- na$count / total
+na$macroarea <- 'North America'
+
+papunesia <- macros %>% filter(macroarea=="Papunesia")
+total <- length(unique(papunesia$InventoryID))
+papunesia <- papunesia %>% group_by(Phoneme, SegmentClass) %>% summarize(count=n())
+papunesia$freq <- papunesia$count / total
+papunesia$macroarea <- 'Papunesia'
+
+sa <- macros %>% filter(macroarea=="South America")
+total <- length(unique(sa$InventoryID))
+sa <- sa %>% group_by(Phoneme, SegmentClass) %>% summarize(count=n())
+sa$freq <- sa$count / total
+sa$macroarea <- 'South America'
+```
+
+```{r}
+# Drop the count and rbind them the area-specific dataframes.
+africa <- africa %>% select(macroarea, Phoneme, SegmentClass, freq)
+australia <- australia %>% select(macroarea, Phoneme, SegmentClass, freq)
+eurasia <- eurasia %>% select(macroarea, Phoneme, SegmentClass, freq)
+papunesia <- papunesia %>% select(macroarea, Phoneme, SegmentClass, freq)
+na <- na %>% select(macroarea, Phoneme, SegmentClass, freq)
+sa <- sa %>% select(macroarea, Phoneme, SegmentClass, freq)
+
+all <- bind_rows(africa, australia, eurasia, papunesia, na, sa)
+```
+
+
+```{r}
+# Get delta between phoneme frequencies by area
+totals <- totals %>% select(Phoneme, phoible_freq)
+all <- left_join(all, totals, by=c("Phoneme"="Phoneme"))
+all$delta <- all$freq-all$phoible_freq
+```
+
+```{r}
+# Where are the largest deltas by area?
+all %>% group_by(macroarea) %>% slice_max(order_by = delta, n = 10) %>% kable()
+```
+
+```{r}
+# Obstruents in SA
+voiced_obstruents <- c('b', 'd', 'ɡ', 'β', 'v', 'ð', 'z', 'ʒ', 'ɣ')
+all %>% filter(macroarea == "South America") %>% filter(Phoneme %in% voiced_obstruents) %>% slice(match(voiced_obstruents, Phoneme)) %>% kable()
+```
+
+```{r}
+all %>% group_by(macroarea) %>% slice_max(order_by = delta, n = 10) %>% kable()
+```
+
+```{r}
+all %>% group_by(macroarea) %>% slice_min(order_by = delta, n = 10) %>% kable()
+```
+
+```{r}
+pos <- all %>% group_by(macroarea) %>% filter(SegmentClass=="consonant") %>% slice_max(order_by = delta, n = 10)
+pos %>% kable()
+```
+
+```{r}
+neg <- all %>% group_by(macroarea) %>% filter(SegmentClass=="consonant") %>% slice_min(order_by = delta, n = 10)
+neg %>% kable()
+```
+
+
+# Tables for the paper
+
+```{r}
+pos <- pos %>% select(macroarea, Phoneme, freq, phoible_freq, delta)
+
+add.to.row <- list(pos = list(0), command = NULL)
+command <- paste0("\\hline\n\\endhead\n",
+                "\\hline\n",
+                "\\multicolumn{", dim(df)[2] + 1, "}{l}",
+                "{\\footnotesize Continued on next page}\n",
+                "\\endfoot\n",
+                "\\endlastfoot\n")
+add.to.row$command <- command
+
+print(xtable(pos), hline.after=c(-1), add.to.row = add.to.row, tabular.environment = "longtable", include.rownames=FALSE)
+```
+
+```{r}
+neg <- neg %>% select(macroarea, Phoneme, freq, phoible_freq, delta)
+print(xtable(neg), hline.after=c(-1), add.to.row = add.to.row, tabular.environment = "longtable", include.rownames=FALSE)
+```
+
+
+```{r}
+library(xtable)
+print(xtable(all %>% group_by(macroarea) %>% slice_max(order_by = delta, n = 10)))
+```
+
+```{r}
+print(xtable(all %>% group_by(macroarea) %>% slice_min(order_by = delta, n = 10)))
+```
