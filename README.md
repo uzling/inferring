@@ -4,11 +4,8 @@ Supplementary materials for "Inferring recent evolutionary changes in speech sou
 
 Folder contains:
 
-* [analysis](analysis): JSD analysis
+* [analysis](analysis/jsd_testing.md): JSD analysis
 
-* [data_preparation](data_preparation): data preparation pipeline
+* [data_preparation](data_preparation/data_prep.md): data preparation pipeline
 
-* [database_comparison](database_comparison): database comparison reports
-
-
-
+* [database_comparison](database_comparison): database comparison reports (see .md files)
