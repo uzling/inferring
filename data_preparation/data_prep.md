@@ -1,17 +1,93 @@
-Data prep for KLD analysis on PHOIBLE, BDPROTO and SegBo
+Data prep for JSD analysis with PHOIBLE, BDPROTO and SegBo
 ================
 Steven Moran
 
-05 October, 2020
+09 October, 2020
+
+    library(tidyverse)
+    library(knitr)
 
 Overview
 ========
 
-Create various dataframes from the phoible, bdproto and segbo datasets
-for KLD analysis.
+This script create various dataframes from the [PHOIBLE
+Online](https://phoible.org/),
+[BDPROTO](https://github.com/bdproto/bdproto),
+[SegBo](https://github.com/segbo-db/segbo) datasets for Jensen-Shannon
+divergence [analysis](../analysis/jsd_testing.md).
 
-    library(tidyverse)
-    library(knitr)
+In each of the three databases, inventories and borrowed segments were
+interpreted by experts. Because linguists tend to differ in their
+idiosyncratic use of phonetic and phonemic transcription practices,
+segments in each database were codified according to standardized
+Unicode conventions (Moran & Cysouw, 2018) for the International
+Phonetic Alphabet (International Phonetic Association 1999) and
+typologized into a [well-defined phonetic notational
+convention](http://phoible.github.io/conventions/).
+
+To make the data from the three resources comparable, we had to extend
+the datasets to include additional metadata not currently available in
+these resources. For example, to compare language family level
+phonological inventories in BDPROTO against the current daughter
+languages of those families represented in PHOIBLE, we had to code the
+data points in BDPROTO for language family “root”’’" Glottolog codes
+(“Glottocode”), when they are available. For example, BDPROTO contains
+multiple reconstructions for intermediate reconstructions of
+Indo-European, e.g. Proto-Germanic, Proto-Italic, Proto-Slavic. Each
+reconstruction is situated within the larger Indo-European language
+family tree. As such, we tagged each intermediate reconstruction with a
+Glottocode (e.g. Proto-Germanic is assigned
+[germ1287](https://glottolog.org/resource/languoid/id/germ1287), but
+also its “LanguageFamilyRoot” Glottocode, i.e. Indo-European
+[indo1319](https://glottolog.org/resource/languoid/id/indo1319). This
+allows us not only to compare segments and inventories from the daughter
+languages and their reconstructed proto-language, but it also us to
+randomly sample from the pool of languages within a particular branch in
+the language phylogeny. The latter is a first step towards addressing
+temporal bias. We discuss our random sampling procedures in the Methods
+section of our paper. Tagging each database for family-level Glottocodes
+also allows us to take the intersection between BDPROTO and PHOIBLE, so
+that we can not only compare the distribution of segments in both full
+language samples, but also just between the language families that they
+share.
+
+The three datasets used in our paper were also expanded to include a
+geographic classification based on so-called macro-areas, as defined in
+[Glottolog](https://glottolog.org/). These include Africa, Australia,
+Eurasia, North America, South America, and Papunesia (cf. Hammarstrom,
+2014). Comparative linguists use macro-area categories to identify or
+rule out language contact as a factor in the typological distribution of
+linguistic features. Languages are the way they are today due to two
+factors: genealogical descent, i.e. the aspects of a language, such as
+its phonological inventory or grammatical properties, are passed from
+one generation to the next; and language contact, i.e. interaction
+between different language speaking groups can result in the exchange of
+linguistic material through processes such as lexical and grammatical
+borrowing. Whereas the former factor can be investigated by applying the
+historical-comparative method to modern-day vocabularies to reconstruct
+past languages and cultures, the latter factor is more difficult because
+of the lack of information on human contact patterns in the historical
+record (and in particular what those different groups may have spoken,
+since in pre-history speech leaves no archaeological traces).
+Nevertheless, language contact is crucial for the evolutionary
+understanding how languages have become the way they are today. Hence,
+when undertaking statistical inference on linguistic features from
+large-scale databases, macro-areas are often taken into account as a
+random factor in statistical models to account for issues such as
+auto-correlation, e.g. Blasi et al., 2019.
+
+Lastly, the data preparation simply involved extracting various
+dataframes from the three datasets for analysis. For example, one
+dataframe contains all languages’ segments, their language families, and
+the macro-areas areas in which they are spoken per database. This allows
+us to resample the datasets at different levels, e.g. one language per
+family, one segment per language, etc. Another dataframe includes simply
+the number of counts per segment per database and their probability of
+occurrence in each dataset. These data are used as input to the methods
+we use, including Jensen-Shannon divergence, to measure the difference
+between the probability distribution of segments in the different
+databases. In the next Section, we discuss the methods we use for
+comparative analysis.
 
 Data for resampling: all segments, with families and macroareas
 ===============================================================
