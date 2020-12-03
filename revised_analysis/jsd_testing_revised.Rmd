@@ -1,7 +1,7 @@
 ---
 title: "JSD_testing"
 author: "Nicholas Lester"
-date: "9/24/2020"
+date: "24/9/2020, updated 3/12/2020"
 output:
   github_document:
   pandoc_args: --webtex
@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE, cache=TRUE, warning=F, message=F)
 ### Summary
 This file analyzes and compares the distributions of phonemes in three databases: BDPROTO (ancient attested/reconstructed languages), PHOIBLE (modern languages), and SegBo (segments known to be borrowed into inventories).
 
-In **Section 1**, we test the overall similarity of each of the databases to each other. Similarity is operationalized as the Kullback-Leibler divergence between the frequency distributions of segments in the databases. We also explore in what ways these similarity estimates might be affected by individual segments, macroareas, or segment class.
+In **Section 1**, we test the overall similarity of each of the databases to each other. Similarity is operationalized as the Jensen-Shannon divergence between the frequency distributions of segments in the databases. We also explore in what ways these similarity estimates might be affected by individual segments, macroareas, or segment class.
 
 In **Section 2**, we attempt to correct against sampling biases in the databases by resampling segments in two ways: one sound per language and one language per family). The resulting frequency distributions are then compared as in Section 1. A random baseline is established for each comparison by scrambling the mapping of segment to frequency in each randomly sampled distribution.
 
@@ -125,7 +125,8 @@ scatter.log.segpt = ggplot(intersect_families_segments_long,
 scatter.log.segpt
 
 ```
-THese scatterplots show that the two databases agree much more in the upper ranges. In the low-to-middle ranges, we see a great degree of variability between the two. To anticipate what we see below, these are precisely the areas of the frequency distribution that we find the biggest discrepancies between the two databases regarding their respective relationships to SegBo. 
+
+These scatterplots show that the two databases agree much more in the upper ranges. In the low-to-middle ranges, we see a great degree of variability between the two. To anticipate what we see below, these are precisely the areas of the frequency distribution that we find the biggest discrepancies between the two databases regarding their respective relationships to SegBo. 
 
 Let's compare the segment counts of the different databases
 ```{r basic_count_data}
@@ -295,7 +296,7 @@ p.vowel.cts
 
 Clearly, PHOIBLE is much larger than the other two databases. BDPROTO is second largest (though much smaller than PHOIBLE), and is roughly four times as large as SegBo.
 
-The plot of sample size by macroarea shows that each database favors one or more macroareas more than the other two: for PHOIBLE, African and Australian languages; for BDPROTO, North American languages (and to a lesser extent, Eurasian languages); and for SegBo, Papunesian languages. Furthermore, SegBo contains much richer coverage of vowels than consonants in Australia. Finally, the overall proportions (i.e., all segment types considered) more closely resemble the distributional biases we see for consonants across macroareas than for vowels. 
+The plot of sample size by macroarea shows that each database favors one or more macroareas more than the other two: for PHOIBLE, African and Australian languages; for BDPROTO, North American languages (and to a lesser extent, Eurasian languages); and for SegBo, Papunesian languages. Furthermore, SegBo contains more consonants than vowels in most areas, except for Australia, where more borrowed vowels than consonants are documented. Finally, the overall proportions (i.e., all segment types considered) more closely resemble the distributional biases we see for consonants across macroareas than for vowels. 
 
 **Section 1**: Global comparisons of the databases
 
@@ -550,7 +551,7 @@ anova(bd.pho.contrast.allsegs[[1]], test="Chisq")
 poisson.all = bd.pho.contrast.allsegs[[2]]; poisson.all
 
 ```
-We can also simply model SegBo frequency by each database separately and overlay the results. This avoids a potential issue with the reported analysis, in which single observations (i.e., the SegBo frequency for a given phoneme) is repeated twice (once for each database). Under this formulation, we cannot directly estimate any difference due to the database (i.e., PHOIBLE vs. BDPROTO). Nevertheless, if the prior results are replicated, then we stand on firmer ground when interpreting them. 
+We can also simply model SegBo frequency by each database separately and overlay the results. This avoids a potential issue with the reported analysis, in which single observations (i.e., the SegBo frequency for a given phoneme) are repeated twice (once for each database). Under this formulation, we cannot directly estimate any difference due to the database (i.e., PHOIBLE vs. BDPROTO). Nevertheless, if the prior results are replicated, then we stand on firmer ground when interpreting them. 
 
 ```{r single_term_models}
 # PHOIBLE only
@@ -562,7 +563,7 @@ poisson.all.singModels = bd.pho.contrast.allsegs.singModels[[2]]; poisson.all.si
 ```
 The results are nearly identical, so we continue with the interaction-based models. 
 
-One of our reviewers points out that the relationship between frequencies may differ across geographic areas. We therefore expand the modeling dataset by adding frequencies per macroarea per database. We explore several model structures. First, we leave the model structure from the full model intact, but split the data up by macroarea. We then run two generalized linear mixed-effect Poisson regressions with macroarea and family as random effects (crosed and nested, respectively). 
+One of our reviewers points out that the relationship between frequencies may differ across geographical areas. We therefore expand the modeling dataset by adding frequencies per macroarea per database. We explore several model structures. First, we leave the model structure from the full model intact, but split the data up by macroarea. We then run two generalized linear mixed-effect Poisson regressions with macroarea and family as random effects (crossed and nested, respectively). 
 
 ```{r data_for_modeling_diffs_by_macroarea}
 # Split the column which contains information about inventory ID and database into separate columns
@@ -671,7 +672,7 @@ lang.tab = all.dat %>%
            as.data.frame()
 ```
 
-Running the models (note that for the mixed-effect models, "quasi" classes are not allowed; we therefore use the simple poisson model).
+Running the models (note that for the mixed-effect models, "quasi" classes are not allowed; we therefore use the simple Poisson model).
 ```{r modeling_diffs_by_family_and_macroarea}
 # Function to perform the modeling
 mod.fnc.simp = function(df, mod.type, family, nested = F, australia = F){
@@ -933,9 +934,9 @@ rand.nest.graph = graph.collector(rand.area.fam.nest, family = T, random = T, T)
 ggarrange(rand.area.cross.graph, rand.area.fam.cross.graph, rand.nest.graph, common.legend = T)
 ```
 
-For the simple model by-area models (which most closely resemble the overall model in structure), we see largely similar shapes for the behavior of both BDPROTO and PHOIBLE frequencies. The major exceptions are spikes in the high-frequency PHOIBLE range for Africa and Australia. Further, Australia shows the most distinctive pattern, having a much higher proportion of high-borrowability sounds. 
+For the simple model by-area models (which most closely resemble the overall model in structure), we see largely similar shapes for the behavior of both BDPROTO and PHOIBLE frequencies. The major exceptions are spikes in the high-frequency PHOIBLE range for Africa and Australia. Further, Australia shows the most distinctive pattern, having a much higher proportion of frequently-borrowed sounds. 
 
-For the random-effect models, the most stable features are (i) the greater amount of high-borrowability sounds in the mid-frequency range of PHOIBLE relative to BDPROTO and (ii) the rapid decreases on either end of the frequency spectrum. We also see a much more pronounced effect of BDPROTO in the high-frequency range (e.g., 7.5 in scaled frequency). Finally, the random-effect models are more sensitive to the high-band spikes for PHOIBLE that we observe for Africa, Eurasia, and Australia.
+For the random-effect models, the most stable features are (i) the greater amount of frequently-borrowed sounds in the mid-frequency range of PHOIBLE relative to BDPROTO and (ii) the rapid decreases on either end of the frequency spectrum. We also see a much more pronounced effect of BDPROTO in the high-frequency range (e.g., 7.5 in scaled frequency). Finally, the random-effect models are more sensitive to the high-band spikes for PHOIBLE that we observe for Africa, Eurasia, and Australia.
 
 We now briefly explore the sounds that distinguish BDPROTO from PHOIBLE in the higher frequency band for each corpus in the African area.
 
@@ -959,7 +960,7 @@ africa.macro
 
 The African macroarea can roughly be divided by the Saharan desert region, with different types of languages appearing on either side (and indeed, with differing contact environments). It is also the area for which we have the most data, particularly in PHOIBLE (which allows us to take a more fine-grained perspective on areal factors). Methodologically, this excursus will determine to what extent the method we have applied broadly to the world-level sample reveals some kernel of truth about the behavior of well-defined subparts of the data.
 
-To test whether this geographical and geneological divide can shed light on the effects we have so far observed for the African macroarea, we split the African languages up into two groups (northern and subsaharan). We make this split in two ways. First, we split according to latitude (languages which fall above latitude 23.806078, or what is listed at https://www.latlong.net/place/the-sahara-desert-17.html). Next, we split according to family, given that Afro-asiatic or Nilo-Saharan languages are generally associated with the northern part of the continent, and others with the subsaharan region. 
+To test whether this geographical and geneological divide can shed light on the effects we have so far observed for the African macroarea, we split the African languages up into two groups (northern and subsaharan). We make this split in two ways. First, we split according to latitude (languages which fall above latitude 23.806078, or what is listed at https://www.latlong.net/place/the-sahara-desert-17.html). Next, we split according to family, given that Afro-Asiatic or Nilo-Saharan languages are generally associated with the northern part of the continent, and others with the Subsaharan region. 
 
 ```{r splitting_Africa_by_family_and_latitude}
 # Load the glottocode data to get latitudes
@@ -1072,7 +1073,7 @@ ggarrange(plotlist = africa.graphs.latSplit, common.legend = T)
 ```
 These plots reveal that the southern languages are the ones driving the secondary spike. The method of distinguishing within-Africa areas does not seem to affect this particular pattern. The method of selecting the northern area does, however, have a significant impact on the shape of the BDPROTO estimates (but not PHOIBLE). There is remarkable consistency, however, between these "micro"-areas and the plots we have observed elsewhere: an asymmetry at the low-end of the frequency spectrum (higher borrowability for BDPROTO sounds), as well as higher borrowability for PHOIBLE vis-a-vis BDPROTO in the middle range (though this is less pronounced in the latitude-based model).
 
-Indeed, both modern and ancient languages in this area contain highly borrowable sounds. Perhpas this occurs through preservation of these sorts of sounds, or perhaps the sounds themselves differ between the two databases. We check this now.
+Indeed, both modern and ancient languages in this area contain frequently-borrowed sounds. Perhaps this occurs through preservation of these sorts of sounds, or perhaps the sounds themselves differ between the two databases. We check this now.
 
 ```{r check_african_sound_types}
 africa.fam = mod.dat.africa.famSplit %>%
@@ -1219,11 +1220,11 @@ diff.phoible.low.ld = find.segs(fam.con.sans.ld.contrast[[3]], 0, 2.5, "phoible"
 head(diff.phoible.low.ld$Phoneme, 20)
 
 ```
-By considering only consonants, we do not observe a significant change in the behavior of the two databases. However, removing labiodentals (everything else held constant), draws BDPROTO and PHOIBLE into much closer alignment. Nevertheless, we still observe the crossing at roughly 2.5 on the x-axis, with too few mid-borrowability forms in BDPROTO and a stronger peak in PHOIBLE for mid-level frequencies. The image is a bit more difficult when we consider only consonants without the labiodentals. In this case, we see a stronger peak for BDPROTO in the higher frequncy ranges (i.e., BDPROTO contains more instances of sounds that are also highly borrowable). But the general picture is similar, and we still observe the cross-over in the lower frequency ranges. In other words, BDPROTO has too few mid-level borrowable segments and too many low- and high-borrowability segments relative to PHOIBLE.   
+By considering only consonants, we do not observe a significant change in the behavior of the two databases. However, removing labiodentals (everything else held constant), draws BDPROTO and PHOIBLE into much closer alignment. Nevertheless, we still observe the crossing at roughly 2.5 on the x-axis, with too few mid-borrowability forms in BDPROTO and a stronger peak in PHOIBLE for mid-level frequencies. The image is a bit more difficult when we consider only consonants without the labiodentals. In this case, we see a stronger peak for BDPROTO in the higher frequncy ranges (i.e., BDPROTO contains more instances of sounds that are also frequently borrowed). But the general picture is similar, and we still observe the cross-over in the lower frequency ranges. In other words, BDPROTO has too few mid-level borrowable segments and too many low- and high-borrowability segments relative to PHOIBLE.   
 
-*Interpretation*: Over time, the most borrowable sounds are drawn towards the median frequency band across languages. Conversely, the least borrowable sounds are drawn to the extremes of the frequency range. This fits with the idea that both typologically dispreferred sounds (e.g., sounds that are rare because they are difficult to articulate/perceive) and sounds that are typologically heavily preferred (i.e., the sounds that languages tend to already have) are the least likely to be borrowed in contact scenarios.
+*Interpretation*: Over time, the most frequently borrowed sounds are drawn towards the median frequency band across languages. Conversely, the least frequently borrowed sounds are drawn to the extremes of the frequency range. This fits with the idea that both typologically dispreferred sounds (e.g., sounds that are rare because they are difficult to articulate/perceive) and sounds that are typologically heavily preferred (i.e., the sounds that languages tend to already have) are the least likely to be borrowed in contact scenarios.
 
-Also, as Eitan points out, the largest discrepancy between BDPROTO and PHOIBLE arises for those sounds that are the most frequent in SegBo.
+Also, the largest discrepancy between BDPROTO and PHOIBLE arises for those sounds that are the most frequent in SegBo.
 
 **Section 2**: Random resampling to guard against biases in the databases
 
